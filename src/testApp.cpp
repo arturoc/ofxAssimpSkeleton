@@ -150,11 +150,28 @@ void testApp::draw(){
 	ofScale(model.getNormalizedScale() , model.getNormalizedScale(), model.getNormalizedScale());
 
 	//ofScale(scale.x, scale.y, scale.z);
-
+	ofSetColor(ofColor::white);
+	ofSetLineWidth(1);
 	if(wireframe){
 		body.drawWireframe();
 		for(int i=0;i<(int)model.skeleton.size();i++){
-			model.skeleton[i].mesh.drawFaces();
+			ofMesh face1,face2;
+			//face1.addVertices(&model.skeleton[i].mesh.getVertices()[0],4);
+			//face2.addVertices(&model.skeleton[i].mesh.getVertices()[4],4);
+
+			face1.addVertex(model.skeleton[i].mesh.getVertex(0));
+			face1.addVertex(model.skeleton[i].mesh.getVertex(4));
+			face1.addVertex(model.skeleton[i].mesh.getVertex(5));
+			face1.addVertex(model.skeleton[i].mesh.getVertex(1));
+
+			face2.addVertex(model.skeleton[i].mesh.getVertex(3));
+			face2.addVertex(model.skeleton[i].mesh.getVertex(7));
+			face2.addVertex(model.skeleton[i].mesh.getVertex(6));
+			face2.addVertex(model.skeleton[i].mesh.getVertex(2));
+
+			ofSetColor(ofColor::red);
+			ofSetLineWidth(6);
+			ofLine(face1.getCentroid(),face2.getCentroid());
 		}
 
 	}else{
