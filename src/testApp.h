@@ -3,17 +3,21 @@
 #include "ofMain.h"
 #include "ofxAssimpModelLoader.h"
 
+inline ofMatrix4x4 & toOf(aiMatrix4x4 & m){
+	return *((ofMatrix4x4*)&m);
+}
 
 class ofBoundingBox{
 public:
 	ofBoundingBox();
-	ofBoundingBox(const ofVec3f & min, const ofVec3f & max);
+	ofBoundingBox(const ofVec3f & min, const ofVec3f & max, const ofMatrix4x4 & trafo=ofMatrix4x4());
 
-	void set(const ofVec3f & min, const ofVec3f & max);
+	void set(const ofVec3f & min, const ofVec3f & max, const ofMatrix4x4 & trafo=ofMatrix4x4());
 
 	ofVec3f min;
 	ofVec3f max;
 	ofMesh mesh;
+	ofMatrix4x4 trafo;
 };
 
 typedef map<string, aiMatrix4x4> Pose;
@@ -31,6 +35,7 @@ public:
 		return pose;
 	}
 	void pose(Pose& pose, int which = 0) {
+		currentPose = pose;
 		const aiMesh* mesh = modelMeshes[which].mesh;
 		int n = mesh->mNumBones;
 		vector<aiMatrix4x4> boneMatrices(n);
@@ -81,13 +86,27 @@ public:
 		skeleton.clear();
 		const aiMesh* mesh = modelMeshes[which].mesh;
 		int n = mesh->mNumBones;
+		vector<aiMatrix4x4> boneMatrices(n);
+		vector<aiMatrix4x4> currBoneMatrices(n);
+		Pose pose = getPose();
 		for(int a = 0; a < n; a++) {
 			const aiBone* bone = mesh->mBones[a];
+			aiNode* node = scene->mRootNode->FindNode(bone->mName);
+			boneMatrices[a] = currBoneMatrices[a] = bone->mOffsetMatrix;
+			const aiNode* tempNode = node;
+			while(tempNode) {
+				aiMatrix4x4 curPose = pose[tempNode->mName.data];
+				aiMatrix4x4 curcurPose = currentPose[tempNode->mName.data];
+				boneMatrices[a] = (tempNode->mTransformation * curPose) * boneMatrices[a];
+				currBoneMatrices[a] = (tempNode->mTransformation * curcurPose) * currBoneMatrices[a];
+				tempNode = tempNode->mParent;
+			}
 			ofVec3f min(9999,9999,9999),max(-9999,-9999,-9999);
 			for( size_t b = 0; b < bone->mNumWeights; b++) {
 				const aiVertexWeight& weight = bone->mWeights[b];
 				size_t vertexId = weight.mVertexId;
-				const aiVector3D & tmp = modelMeshes[which].animatedPos[vertexId];
+				aiVector3D tmp = modelMeshes[which].mesh->mVertices[vertexId];
+				//aiTransformVecByMatrix4(&tmp,&boneMatrices[a]);
 				min.x = MIN(min.x,tmp.x);
 				min.y = MIN(min.y,tmp.y);
 				min.z = MIN(min.z,tmp.z);
@@ -96,11 +115,12 @@ public:
 				max.y = MAX(max.y,tmp.y);
 				max.z = MAX(max.z,tmp.z);
 			}
-			skeleton.push_back(ofBoundingBox(min,max));
+			skeleton.push_back(ofBoundingBox(min,max,toOf(currBoneMatrices[a])));
 		}
 	}
 
 	vector<ofBoundingBox> skeleton;
+	Pose currentPose;
 };
 
 

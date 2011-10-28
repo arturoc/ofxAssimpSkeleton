@@ -18,24 +18,25 @@ ofBoundingBox::ofBoundingBox(){
 
 }
 
-ofBoundingBox::ofBoundingBox(const ofVec3f & _min, const ofVec3f & _max){
-	set(_min,_max);
+ofBoundingBox::ofBoundingBox(const ofVec3f & _min, const ofVec3f & _max, const ofMatrix4x4 & _trafo){
+	set(_min,_max,_trafo);
 }
 
-void ofBoundingBox::set(const ofVec3f & _min, const ofVec3f & _max){
+void ofBoundingBox::set(const ofVec3f & _min, const ofVec3f & _max, const ofMatrix4x4 & _trafo){
 	min = _min;
 	max = _max;
+	trafo = _trafo;
 	mesh.clear();
 	mesh.setMode(OF_PRIMITIVE_TRIANGLES);
-	mesh.addVertex(min);
-	mesh.addVertex(ofVec3f(max.x,min.y,min.z));
-	mesh.addVertex(ofVec3f(max.x,min.y,max.z));
-	mesh.addVertex(ofVec3f(min.x,min.y,max.z));
+	mesh.addVertex(trafo*min);
+	mesh.addVertex(trafo*ofVec3f(max.x,min.y,min.z));
+	mesh.addVertex(trafo*ofVec3f(max.x,min.y,max.z));
+	mesh.addVertex(trafo*ofVec3f(min.x,min.y,max.z));
 
-	mesh.addVertex(ofVec3f(min.x,max.y,min.z));
-	mesh.addVertex(ofVec3f(max.x,max.y,min.z));
-	mesh.addVertex(max);
-	mesh.addVertex(ofVec3f(min.x,max.y,max.z));
+	mesh.addVertex(trafo*ofVec3f(min.x,max.y,min.z));
+	mesh.addVertex(trafo*ofVec3f(max.x,max.y,min.z));
+	mesh.addVertex(trafo*max);
+	mesh.addVertex(trafo*ofVec3f(min.x,max.y,max.z));
 
 	mesh.addIndex(0);
 	mesh.addIndex(1);
@@ -84,6 +85,7 @@ void ofBoundingBox::set(const ofVec3f & _min, const ofVec3f & _max){
 	mesh.addIndex(6);
 	mesh.addIndex(7);
 	mesh.addIndex(5);
+
 }
 
 void testApp::randomPose() {
